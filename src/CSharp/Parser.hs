@@ -32,7 +32,7 @@ Type ::= int | bool
 Expr_i ::= Expr_i Op_i Expr_i+1 | Expr_i+1
 ExprSimple ::= ( Expr_i ) | const | lowerid
 
-Op_1 ::= =
+Op_1 ::= = (right associative)
 Op_2 ::= ||
 Op_3 ::= &&
 Op_4 ::= ^
@@ -245,7 +245,8 @@ pLiteral =  LitBool <$> sBoolLit
 type Op a = (Char, a -> a -> a)
 
 gen :: [Operator] -> Parser Token Expr -> Parser Token Expr
-gen ops expr = chainl expr (choice (map (\o -> ExprOper o <$ symbol (Operator o)) ops))
+gen [OpAsg] expr = chainr expr (ExprOper OpAsg <$ symbol (Operator OpAsg))
+gen ops     expr = chainl expr (choice (map (\o -> ExprOper o <$ symbol (Operator o)) ops))
 
 pExpr :: Parser Token Expr
 pExpr = foldr gen pExprSimple
@@ -254,8 +255,8 @@ pExpr = foldr gen pExprSimple
   , [OpAnd]
   , [OpXor]
   , [OpEq, OpNeq]
-  , [OpLeq , OpLt , OpGeq , OpGt]
-  , [OpAdd , OpSub]
+  , [OpLeq, OpLt, OpGeq, OpGt]
+  , [OpAdd, OpSub]
   , [OpMul, OpDiv, OpMod]
   ]
 

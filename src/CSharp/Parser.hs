@@ -139,6 +139,9 @@ lexToken = greedyChoice
 lexEnum :: (Bounded a, Enum a, Eq s) =>  (a -> [s]) -> Parser s a
 lexEnum print = choice $ map (\a -> a <$ token (print a)) [minBound..maxBound]
 
+lexComment :: Parser Char Char
+lexComment = 'c' <$ token "//" <* greedy (satisfy (/= '\n')) <* token "\n"
+
 lexInt :: Parser Char Int
 lexInt = read <$> greedy1 (satisfy isDigit)
 
@@ -150,7 +153,7 @@ lexIdent :: Parser Char Ident
 lexIdent = greedy (satisfy isAlphaNum)
 
 lexWhiteSpace :: Parser Char String
-lexWhiteSpace = greedy (satisfy isSpace)
+lexWhiteSpace = greedy (satisfy isSpace <|> lexComment)
 
 greedyChoice :: [Parser s a] -> Parser s a
 greedyChoice = foldr (<<|>) empty

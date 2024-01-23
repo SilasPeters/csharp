@@ -28,9 +28,19 @@ Stat ::= Expr ;
 Else ::= else Stat
 Typevoid ::= Type | void
 Type ::= int | bool
-Expr ::= Exprsimple
-       | Exprsimple operator Expr
-Exprsimple ::= const | lowerid | ( Expr )
+
+Expr_i ::= Expr_i Op_i Expr_i+1 | Expr_i+1
+ExprSimple ::= ( Expr_i ) | const | lowerid
+
+Op_1 ::= =
+Op_2 ::= ||
+Op_3 ::= &&
+Op_4 ::= ^
+Op_5 ::= == | !=
+Op_6 ::= < | > | <= | >=
+Op_7 ::= + | -
+Op_8 ::= * | / | %
+
 -}
 
 module CSharp.Parser where
@@ -232,13 +242,27 @@ pLiteral :: Parser Token Literal
 pLiteral =  LitBool <$> sBoolLit
         <|> LitInt  <$> sIntLit
 
+type Op a = (Char, a -> a -> a)
+
+gen :: [Operator] -> Parser Token Expr -> Parser Token Expr
+gen ops expr = chainl expr (choice (map (\o -> ExprOper o <$ symbol (Operator o)) ops))
+
+pExpr :: Parser Token Expr
+pExpr = foldr gen pExprSimple
+  [ [OpAsg]
+  , [OpOr]
+  , [OpAnd]
+  , [OpXor]
+  , [OpEq, OpNeq]
+  , [OpLeq , OpLt , OpGeq , OpGt]
+  , [OpAdd , OpSub]
+  , [OpMul, OpDiv, OpMod]
+  ]
+
 pExprSimple :: Parser Token Expr
 pExprSimple =  ExprLit  <$> pLiteral
            <|> ExprVar  <$> sLowerId
            <|> parenthesised pExpr
-
-pExpr :: Parser Token Expr
-pExpr = chainr pExprSimple (ExprOper <$> sOperator)
 
 pDecl :: Parser Token Decl
 pDecl = Decl <$> pRetType <*> sLowerId

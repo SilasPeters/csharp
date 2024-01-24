@@ -23,8 +23,11 @@ Statdecl ::= Stat | Decl ;
 Stat ::= Expr ;
        | if ( Expr ) Stat Else?
        | while ( Expr ) Stat
+       | for ( Exprdecls? ; Expr ; Exprdecls? ) Stat
        | return Expr ;
        | Block
+Exprdecls ::= Exprdecl (, Exprdecl)*
+Exprdecl  ::= Expr | Decl
 Else ::= else Stat
 Typevoid ::= Type | void
 Type ::= int | bool
@@ -49,6 +52,7 @@ import CSharp.AbstractSyntax
 
 import ParseLib.Abstract hiding (braced, bracketed, parenthesised)
 
+import Data.List ( singleton )
 import Data.Char
 import Prelude hiding ((<$), (<*), (*>), sequence)
 import Data.Maybe
@@ -79,6 +83,7 @@ printKeyword = \case
   ; KeyWhile -> "while";  KeyReturn -> "return"
   ; KeyTry   -> "try";    KeyCatch  -> "catch"
   ; KeyClass -> "class";  KeyVoid   -> "void"
+  ; KeyFor   -> "for"
   }
 
 -- Concrete syntax of C# punctuation
@@ -104,6 +109,7 @@ data Keyword
   | KeyWhile | KeyReturn
   | KeyTry   | KeyCatch
   | KeyClass | KeyVoid
+  | KeyFor
   deriving (Eq, Show, Ord, Enum, Bounded)
 
 data Punctuation
@@ -230,13 +236,24 @@ pStatDecl :: Parser Token Stat
 pStatDecl =  pStat
          <|> StatDecl <$> pDeclSemi
 
+pExprdecls :: Parser Token [Stat]
+pExprdecls = (:) <$> pExprdecl <*> many (flip const <$> symbol (Punctuation Comma) <*> pExprdecl)
+
+pExprdecl :: Parser Token Stat
+pExprdecl = StatExpr <$> pExpr <|> StatDecl <$> pDecl
+
 pStat :: Parser Token Stat
 pStat =  StatExpr <$> pExpr <*  sSemi
      <|> StatIf     <$ keyword KeyIf     <*> parenthesised pExpr <*> pStat <*> optionalElse
      <|> StatWhile  <$ keyword KeyWhile  <*> parenthesised pExpr <*> pStat
      <|> StatReturn <$ keyword KeyReturn <*> pExpr               <*  sSemi
      <|> pBlock
-     where optionalElse = option (keyword KeyElse *> pStat) (StatBlock [])
+      -- for ( Exprdecls? ; Expr ; Exprdecls? ) Stat
+     <|> (\as w -> StatBlock $ as ++ [w]) <$ keyword KeyFor <* symbol (Punctuation POpen) -- boilerplate
+        <*> option pExprdecls [] <* symbol (Punctuation Semicolon) -- statements to be run before while loop
+        <*> (StatWhile <$> pExpr <* symbol (Punctuation Semicolon) -- while loop invariant
+          <*> ((\as b -> StatBlock (b : as)) <$> option pExprdecls [] <* symbol (Punctuation PClose) <*> pStat)) -- body of while loop, suffixed with second Exprdecls?
+  where optionalElse = option (keyword KeyElse *> pStat) (StatBlock [])
 
 pLiteral :: Parser Token Literal
 pLiteral =  LitBool <$> sBoolLit

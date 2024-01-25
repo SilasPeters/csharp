@@ -248,7 +248,7 @@ pStat =  StatExpr <$> pExpr <*  sSemi
      <|> StatWhile  <$ keyword KeyWhile  <*> parenthesised pExpr <*> pStat
      <|> StatReturn <$ keyword KeyReturn <*> pExpr               <*  sSemi
      <|> pBlock
-      -- for ( Exprdecls? ; Expr ; Exprdecls? ) Stat
+      -- for ( Exprdecls? ; Expr ; Exprdecls? ) Stat        -- TODO [optimise] condense semantic functions to first line
      <|> (\as w -> StatBlock $ as ++ [w]) <$ keyword KeyFor <* symbol (Punctuation POpen) -- boilerplate
         <*> option pExprdecls [] <* symbol (Punctuation Semicolon) -- statements to be run before while loop
         <*> (StatWhile <$> pExpr <* symbol (Punctuation Semicolon) -- while loop invariant

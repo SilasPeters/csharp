@@ -80,7 +80,7 @@ fExprVar x va = case va of
 
 fExprOp :: Operator -> E -> E -> E
 fExprOp OpAsg e1 e2 va = e2 Value ++ [LDS 0] ++ e1 Address ++ [STA 0]
-fExprOp OpAnd e1 e2 va = e1 Value ++ [LDS 0, BRF (codeSize rightOperand)] ++ rightOperand -- TODO is LDS 0 the official of of copying the return value?
+fExprOp OpAnd e1 e2 va = e1 Value ++ [LDS 0, BRF (codeSize rightOperand)] ++ rightOperand
   where rightOperand = e2 Value ++ [AND]
 fExprOp OpOr  e1 e2 va = e1 Value ++ [LDS 0, BRT (codeSize rightOperand)] ++ rightOperand
   where rightOperand = e2 Value ++ [OR]

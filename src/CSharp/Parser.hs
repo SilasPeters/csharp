@@ -263,7 +263,7 @@ type Op a = (Char, a -> a -> a)
 
 gen :: [Operator] -> Parser Token Expr -> Parser Token Expr
 gen [OpAsg] expr = chainr expr (ExprOper OpAsg <$ symbol (Operator OpAsg))
-gen ops     expr = chainl expr (choice (map (\o -> ExprOper o <$ symbol (Operator o)) ops))
+gen ops     expr = chainl expr (choice (map (\o -> ExprOper o <$ symbol (Operator o)) ops)) -- TODO greedyChoice? Test if <= is parsed as <= and not < and =
 
 pExpr :: Parser Token Expr
 pExpr = foldr gen pExprSimple

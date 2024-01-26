@@ -1,3 +1,8 @@
+-- Made by:
+-- Luke Blijenbergh [2980916]
+-- Silas Peters [4419197]
+
+
 module Main where
 
 import CSharp.Algebra

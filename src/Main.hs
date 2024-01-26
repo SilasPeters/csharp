@@ -16,6 +16,7 @@ import System.FilePath
 import Prelude hiding ((*>), (<$), (<*))
 import CSharp.Parser (lexicalScanner)
 import CSharp.CodeGen (codeAlgebra)
+import CSharp.Analysis ( scopeAlgebra )
 
 myTest :: IO () -- test lexer, parser and
 myTest = do 
@@ -51,12 +52,12 @@ processFile infile = do
   let outfile = addExtension (dropExtension infile) "ssm"
   xs <- readFile infile
   let program = run "parser" (pClass <* eof) . run "lexer" lexicalScanner $ xs 
-  case foldCSharp analysisAlgebra program of
-    False -> error "analysis failed"
-    True -> do
+  case foldCSharp scopeAlgebra program of
+    [] -> do
       let ssm = formatCode $ foldCSharp codeAlgebra program
       writeFile outfile ssm
       putStrLn (outfile ++ " written")
+    idents -> error $ "Analysis failed!\n  Undefined variables: " ++ unwords idents
 
 run :: (ErrorsPretty s, Ord s, Show a) => String -> Parser s a -> [s] -> a
 run s p x = fst . headOrError . parse (p <* eof) $ x

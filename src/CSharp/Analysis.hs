@@ -7,7 +7,7 @@ import Debug.Trace (trace)
 import Data.Function (on)
 
 data ScopeBlock = ScopeBlock { decls :: Set Ident, unrecognised :: Set Ident }
-  deriving (Show)
+  deriving (Show) -- TODO [optimise] make this a newtype (Set Ident, Set Ident)
 
 scopeAlgebra :: CSharpAlgebra [Ident] ScopeBlock ScopeBlock ScopeBlock
 scopeAlgebra = CSharpAlgebra
@@ -16,7 +16,7 @@ scopeAlgebra = CSharpAlgebra
 
     , memberD = flip ScopeBlock empty . singleton . fromDecl
     , memberM = \_ _ args b -> completeScope $ ScopeBlock (fromList $ map fromDecl args) empty
-    `orderDependentScope` completeScope b
+    `orderDependentScope` completeScope b -- TODO after methods are implemented, check if undefined variables are allowed when passing them to a method
 
     , statDecl   = \(Decl _ ident) -> ScopeBlock (singleton ident) empty
     , statExpr   = id

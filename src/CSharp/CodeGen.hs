@@ -21,7 +21,7 @@ import Data.Map (Map)
 -- Change these definitions instead of the function signatures to get better type errors.
 type C = Code                                           -- Class
 type M = (GVarEnv -> (Code, GVarEnv),VarFun)            -- Member
-type S = GVarEnv -> LVarEnv -> ((Code, LVarEnv), IsDecl)          -- Statement
+type S = GVarEnv -> LVarEnv -> ((Code, LVarEnv), IsDecl)-- Statement
 type E = GVarEnv -> LVarEnv -> ValueOrAddress -> Code   -- Expression
 
 
@@ -30,20 +30,35 @@ data VarFun = VFVar | VFFun
 
 type Declared = [Decl]
 
-data GVarEnv = GVarEnv {globals :: [ClassVar] }
+data GVarEnv = GVarEnv {globals :: [ClassVar] 
+  , methods :: [GMeth]}
+
+data GMeth = GM {mType :: RetType, mname :: Ident}
 
 data LVarEnv = LVarEnv {locals :: [StackVar] }
 
 addGlobal :: Ident -> RetType -> GVarEnv -> GVarEnv
-addGlobal id rt env = GVarEnv $ CV (length $ globals env) rt id : globals env
+addGlobal id rt env = GVarEnv (CV (length $ globals env) rt id : globals env) (methods env)
+
+
 
 getGlobal :: Ident -> ValueOrAddress -> GVarEnv -> Maybe Int
-getGlobal id va (GVarEnv cvs) = find cvs
+getGlobal id va (GVarEnv cvs _) = find cvs
   where
     find :: [ClassVar] -> Maybe Int
     --find _ = error $ "id: " ++ id ++ "va: " ++ show va ++ "cvs: " ++ show cvs 
     find (cv:cvs)
       | gName cv == id = Just $ relativeToMK cv
+      | otherwise = find cvs
+    find [] = Nothing
+
+getMethType :: Ident -> ValueOrAddress -> GVarEnv -> Maybe RetType
+getMethType id va (GVarEnv _ meths) = find meths
+  where
+    find :: [GMeth] -> Maybe RetType
+    --find _ = error $ "id: " ++ id ++ "va: " ++ show va ++ "cvs: " ++ show cvs 
+    find (cv:cvs)
+      | mname cv == id = Just $ mType cv
       | otherwise = find cvs
     find [] = Nothing
 
@@ -84,14 +99,23 @@ codeAlgebra = CSharpAlgebra
   fStatBlock
   fExprLit
   fExprVar
+  fExprMeth
   fExprOp
+
+
+
+fExprMeth :: Ident -> [E] -> E
+fExprMeth id es genv lenv va = ps ++ [Bsr id]
+  where
+    ps = concatMap (\p -> p genv lenv Value) es
+    
 
 -- | should merge class variables 
 fClass :: ClassName -> [M] -> C
 fClass c ms = [Bsr "main", HALT] ++ appEnv
   where
     appEnv :: Code
-    appEnv = app (GVarEnv []) (map fst $ decl ++ fun)
+    appEnv = app (GVarEnv [] []) (map fst $ decl ++ fun)
     decl = filter fil ms
     fun = filter (not.fil) ms
 
@@ -115,14 +139,14 @@ fMembMeth t id ps s = (news, VFFun)
       where
         sgenv = s genv
         slenv = sgenv locVarEnv
-        isDecl = [AJS (-1)| snd slenv] 
+        isDecl = [AJS (-1)| snd slenv]
         scode = fst (fst slenv) ++ isDecl
     locVarEnv :: LVarEnv
     locVarEnv = LVarEnv (zipWith (curry parToVar) ps beforeList)
     params :: Int
     params = length ps
     beforeList :: [Int]
-    beforeList = map (\x -> x - params - 1) [1,2..]
+    beforeList = map (\x -> x - params - 2) [1,2..]
     parToVar :: (Decl,Int) -> StackVar
     parToVar (Decl rt id,i) = SV i rt id
 
@@ -173,7 +197,7 @@ fStatReturn e env lenv = ((e env lenv Value ++ [pop] ++ [RET], lenv),False)
 --S = GVarEnv -> LVarEnv -> (Code, LVarEnv)
 -- executes multiple statements
 fStatBlock :: [S] -> S
-fStatBlock ss genv lenv = ((fst sslenv ++ replicate numOfDecl (AJS (-1)),lenv),False)
+fStatBlock ss genv lenv = ((fst sslenv ++ adj,lenv),False)
   where
     ssgenv :: [LVarEnv -> ((Code, LVarEnv), IsDecl)]
     ssgenv = map (\f -> f genv) ss
@@ -181,6 +205,8 @@ fStatBlock ss genv lenv = ((fst sslenv ++ replicate numOfDecl (AJS (-1)),lenv),F
     sslenv = app1 lenv ssgenv
     numOfDecl :: Int
     numOfDecl = length $ filter id (snd sslenv)
+    adj :: Code
+    adj = [AJS (-numOfDecl) | numOfDecl > 0]
 -- app lenv ss
 --app :: a -> [a -> ([b],a)] -> [b]
 --app :: a -> [a -> ([b],a)] -> [b]

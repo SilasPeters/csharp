@@ -1,20 +1,17 @@
-class Hoi 
+class Hello
 {
-    void main ()
+    int g;
+    
+    void main()
     {
-        int j;
-        int i;
-        j = 3+6;
-        i = 100+j;
-        if (j == 9)
-        {
-            int k;
-        }
-        while (j > 0)
-        {
-            int q;
-            q = j;
-            j = q - 1;
-        }
+        square(5);
     }
+    
+    int square( int x )
+    {
+        int y;
+        y = x*x;
+        return y;
+    }
+
 }

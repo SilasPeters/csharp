@@ -266,6 +266,7 @@ gen :: [Operator] -> Parser Token Expr -> Parser Token Expr
 gen [OpAsg] expr = chainr expr (ExprOper OpAsg <$ symbol (Operator OpAsg))
 gen ops     expr = chainl expr (choice (map (\o -> ExprOper o <$ symbol (Operator o)) ops)) -- TODO greedyChoice? Test if <= is parsed as <= and not < and =
 
+
 pExpr :: Parser Token Expr
 pExpr = foldr gen pExprSimple
   [ [OpAsg]
@@ -281,6 +282,7 @@ pExpr = foldr gen pExprSimple
 pExprSimple :: Parser Token Expr
 pExprSimple =  ExprLit  <$> pLiteral
            <|> ExprVar  <$> sLowerId
+           <|> ExprMeth <$> sLowerId <*> parenthesised (many pExpr)
            <|> parenthesised pExpr
 
 pDecl :: Parser Token Decl -- declaration of (type | void) then lowercase name

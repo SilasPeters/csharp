@@ -32,6 +32,7 @@ data Literal = LitInt Int | LitBool Bool
 data Expr   -- Expressions
   = ExprLit   Literal
   | ExprVar   Ident
+  | ExprMeth  Ident [Expr]
   | ExprOper  Operator Expr Expr
   deriving (Eq, Ord, Show)
 
@@ -103,6 +104,7 @@ instance IndentShow Stat where
 instance IndentShow Expr where 
   iShow i (ExprLit   lit) = tabs i ++ show lit
   iShow i (ExprVar   id) = tabs i ++ show id
+  iShow i (ExprMeth  id ps) = tabs i ++ show id ++ "(" ++ separateWith ';' (map (iShow 0) ps) ++ ")"
   iShow i (ExprOper  op e1 e2) = iShow i e1 ++ show op ++ iShow 0 e2
 
 psegmenti :: (IndentShow a) => Char -> Char -> Int -> a -> String

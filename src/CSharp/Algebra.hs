@@ -23,6 +23,7 @@ data CSharpAlgebra c m s e
 
     , exprLit   :: Literal -> e
     , exprVar   :: Ident -> e
+    , exprMeth  :: Ident -> [e] -> e
     , exprOper  :: Operator -> e -> e -> e
     }
 
@@ -42,4 +43,5 @@ foldCSharp CSharpAlgebra{..} = fClas where
   fStat (StatBlock  ss)       = statBlock (map fStat ss)
   fExpr (ExprLit    lit)      = exprLit lit
   fExpr (ExprVar    var)      = exprVar var
+  fExpr (ExprMeth   name pars)= exprMeth name (map fExpr pars)
   fExpr (ExprOper   op e1 e2) = exprOper op (fExpr e1) (fExpr e2)

@@ -27,6 +27,7 @@ scopeAlgebra = CSharpAlgebra
 
     , exprLit   = const emptyScopeBlock
     , exprVar   = ScopeBlock empty . singleton
+    , exprMeth  = \_ ->  completeScope . foldl orderDependentScope emptyScopeBlock 
     , exprOper  = \_ left right -> left `eitherScope` right
     }
 

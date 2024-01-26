@@ -1,72 +1,99 @@
 	Bsr main
 	HALT
 main:
+	LDR MP
+	LDRR MP SP
+	AJS 1
 	LDC 1
 	LDS 0
-	LDLA 42
+	LDLA 1
 	STA 0
+	AJS -1
+	AJS -1
 	AJS -1
 	RET
 square:
-	LDL 42
-	LDL 42
+	LDR MP
+	LDRR MP SP
+	AJS 1
+	LDL -1
+	LDL -1
 	MUL
 	LDS 0
-	LDLA 42
+	LDLA 1
 	STA 0
 	AJS -1
-	LDL 42
+	LDL 1
 	AJS -1
 	RET
+	AJS -1
+	AJS -1
 	RET
 abs:
-	LDL 42
+	LDR MP
+	LDRR MP SP
+	LDL -1
 	LDC 0
 	LT
 	BRF 15
 	LDC 0
-	LDL 42
+	LDL -1
 	SUB
 	LDS 0
-	LDLA 42
+	LDLA -1
 	STA 0
 	AJS -1
-	BRA 0
-	LDL 42
+	BRA 13
+	LDC 0
+	LDL -1
+	SUB
+	LDS 0
+	LDLA -1
+	STA 0
+	AJS -1
+	LDL -1
 	AJS -1
 	RET
+	AJS -1
 	RET
 fac:
+	LDR MP
+	LDRR MP SP
+	AJS 1
+	AJS 1
 	LDC 1
 	LDS 0
-	LDLA 42
+	LDLA 2
 	STA 0
 	AJS -1
 	LDC 1
 	LDS 0
-	LDLA 42
+	LDLA 1
 	STA 0
 	AJS -1
 	BRA 26
-	LDL 42
-	LDL 42
+	LDL 1
+	LDL 2
 	MUL
 	LDS 0
-	LDLA 42
+	LDLA 1
 	STA 0
 	AJS -1
-	LDL 42
+	LDL 2
 	LDC 1
 	ADD
 	LDS 0
-	LDLA 42
+	LDLA 2
 	STA 0
 	AJS -1
-	LDL 42
-	LDL 42
+	LDL 2
+	LDL -1
 	LE
 	BRT -33
-	LDL 42
+	LDL 1
 	AJS -1
 	RET
+	AJS -1
+	AJS -1
+	AJS -1
 	RET

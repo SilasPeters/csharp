@@ -26,11 +26,11 @@ type E = GVarEnv -> LVarEnv -> ValueOrAddress -> Code   -- Expression
 
 
 type IsDecl = Bool
-data VarFun = VFVar | VFFun
+data VarFun = VFVar | VFFun Ident RetType
 
 type Declared = [Decl]
 
-data GVarEnv = GVarEnv {globals :: [ClassVar] 
+data GVarEnv = GVarEnv {globals :: [ClassVar]
   , methods :: [GMeth]}
 
 data GMeth = GM {mType :: RetType, mname :: Ident}
@@ -40,7 +40,8 @@ data LVarEnv = LVarEnv {locals :: [StackVar] }
 addGlobal :: Ident -> RetType -> GVarEnv -> GVarEnv
 addGlobal id rt env = GVarEnv (CV (length $ globals env) rt id : globals env) (methods env)
 
-
+addMeth :: Ident -> RetType -> GVarEnv -> GVarEnv
+addMeth id rt env = GVarEnv (globals env) (GM rt id : methods env)
 
 getGlobal :: Ident -> ValueOrAddress -> GVarEnv -> Maybe Int
 getGlobal id va (GVarEnv cvs _) = find cvs
@@ -52,8 +53,8 @@ getGlobal id va (GVarEnv cvs _) = find cvs
       | otherwise = find cvs
     find [] = Nothing
 
-getMethType :: Ident -> ValueOrAddress -> GVarEnv -> Maybe RetType
-getMethType id va (GVarEnv _ meths) = find meths
+getMethType :: Ident -> GVarEnv -> Maybe RetType
+getMethType id (GVarEnv _ meths) = find meths
   where
     find :: [GMeth] -> Maybe RetType
     --find _ = error $ "id: " ++ id ++ "va: " ++ show va ++ "cvs: " ++ show cvs 
@@ -102,25 +103,28 @@ codeAlgebra = CSharpAlgebra
   fExprMeth
   fExprOp
 
-
-
 fExprMeth :: Ident -> [E] -> E
-fExprMeth id es genv lenv va = ps ++ [Bsr id]
+fExprMeth id es genv lenv va = ps ++ [Bsr id] ++ ifRet
   where
     ps = concatMap (\p -> p genv lenv Value) es
-    
+    ifRet :: Code
+    ifRet = case getMethType id genv of
+      Nothing -> error $ id ++" not found"
+      Just TyVoid -> []
+      Just (NV _) -> [LDR R3]
 
 -- | should merge class variables 
 fClass :: ClassName -> [M] -> C
 fClass c ms = [Bsr "main", HALT] ++ appEnv
   where
     appEnv :: Code
-    appEnv = app (GVarEnv [] []) (map fst $ decl ++ fun)
+    appEnv = app (GVarEnv [] meths) (map fst $ decl ++ fun)
     decl = filter fil ms
     fun = filter (not.fil) ms
-
+    meths :: [GMeth]
+    meths = map ((\(VFFun id rt) -> GM rt id) . snd) fun
     fil m = case m of
-      (_,VFFun) -> False
+      (_,VFFun _ _) -> False
       (_,VFVar) -> True
 
 app :: a -> [a -> ([b],a)] -> [b]
@@ -133,9 +137,9 @@ fMembDecl (Decl rt id) = (\gvs -> ([], addGlobal id rt gvs), VFVar)
 
 --M = (GVarEnv -> (Code, GVarEnv),VarFun)  
 fMembMeth :: RetType -> Ident -> [Decl] -> S -> M
-fMembMeth t id ps s = (news, VFFun)
+fMembMeth rt id ps s = (news, VFFun id rt)
   where
-    news genv = ([LABEL id, LDR MP,LDRR MP SP] ++ scode ++ [AJS (-1),RET], genv)
+    news genv = ([LABEL id, LDR MP,LDRR MP SP] ++ scode ++ [LDRR SP MP, LDL 0, STR MP,AJS (-1), STR R4, AJS (negate (length ps)), LDR R4, RET], genv)
       where
         sgenv = s genv
         slenv = sgenv locVarEnv
@@ -146,7 +150,7 @@ fMembMeth t id ps s = (news, VFFun)
     params :: Int
     params = length ps
     beforeList :: [Int]
-    beforeList = map (\x -> x - params - 2) [1,2..]
+    beforeList = map (\x -> x - params - 1) [1,2..]
     parToVar :: (Decl,Int) -> StackVar
     parToVar (Decl rt id,i) = SV i rt id
 
@@ -190,9 +194,11 @@ fStatWhile e s1 genv lenv= (([BRA (codeSize $ fst$ fst s1lenv)] ++ fst (fst s1le
   c = e genv lenv Value
   k = codeSize c
 
--- TODO needs to clean pars
+-- TODO needs to clean parts
 fStatReturn :: E -> S
-fStatReturn e env lenv = ((e env lenv Value ++ [pop] ++ [RET], lenv),False)
+fStatReturn e env lenv = ((e env lenv Value ++ [STR R3, LDRR SP MP, LDL 0, STR MP,AJS (-1), STR R4, AJS (-(length ps)), LDR R4, RET], lenv),False)
+  where
+    ps = filter (\sv -> relativeToSP sv < 0) (locals lenv)
 
 --S = GVarEnv -> LVarEnv -> (Code, LVarEnv)
 -- executes multiple statements

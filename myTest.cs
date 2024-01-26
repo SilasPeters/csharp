@@ -7,7 +7,7 @@ class Hello
         square(5);
     }
     
-    int square( int x )
+    int square( int x , int y)
     {
         int y;
         y = x*x;

@@ -5,8 +5,15 @@ main:
 	LDRR MP SP
 	LDC 5
 	Bsr square
+	LDR R3
 	AJS -1
+	LDRR SP MP
+	LDL 0
+	STR MP
 	AJS -1
+	STR R4
+	AJS 0
+	LDR R4
 	RET
 square:
 	LDR MP
@@ -20,8 +27,21 @@ square:
 	STA 0
 	AJS -1
 	LDL 1
+	STR R3
+	LDRR SP MP
+	LDL 0
+	STR MP
 	AJS -1
+	STR R4
+	AJS -2
+	LDR R4
 	RET
 	AJS -1
+	LDRR SP MP
+	LDL 0
+	STR MP
 	AJS -1
+	STR R4
+	AJS -2
+	LDR R4
 	RET

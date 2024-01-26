@@ -1,16 +1,53 @@
 	Bsr main
 	HALT
 main:
-	LDC 5
-	LDS 0
-	LDLA 0
-	STA 0
-	AJS -1
-	LDLA 0
-	LDC 1
+	LDR MP
+	LDRR MP SP
+	AJS 1
+	AJS 1
+	LDC 3
+	LDC 6
 	ADD
 	LDS 0
-	LDL 1
+	LDLA 1
 	STA 0
+	AJS -1
+	LDC 100
+	LDL 1
+	ADD
+	LDS 0
+	LDLA 2
+	STA 0
+	AJS -1
+	LDL 1
+	LDC 9
+	EQ
+	BRF 6
+	AJS 1
+	AJS -1
+	BRA 4
+	AJS 1
+	AJS -1
+	BRA 27
+	AJS 1
+	LDL 1
+	LDS 0
+	LDLA 3
+	STA 0
+	AJS -1
+	LDL 3
+	LDC 1
+	SUB
+	LDS 0
+	LDLA 1
+	STA 0
+	AJS -1
+	AJS -1
+	LDL 1
+	LDC 0
+	GT
+	BRT -34
+	AJS -1
+	AJS -1
 	AJS -1
 	RET

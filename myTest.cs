@@ -1,10 +1,20 @@
 class Hoi 
 {
-    int i;
     void main ()
     {
         int j;
-        i = 5;
-        j = i+1;
+        int i;
+        j = 3+6;
+        i = 100+j;
+        if (j == 9)
+        {
+            int k;
+        }
+        while (j > 0)
+        {
+            int q;
+            q = j;
+            j = q - 1;
+        }
     }
 }

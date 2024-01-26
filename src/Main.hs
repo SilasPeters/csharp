@@ -17,6 +17,21 @@ import Prelude hiding ((*>), (<$), (<*))
 import CSharp.Parser (lexicalScanner)
 import CSharp.CodeGen (codeAlgebra)
 
+myTest :: IO () -- test lexer, parser and
+myTest = do 
+  file <- readFile "myTest.cs"
+  let lex = run "lexer" lexicalScanner file
+  print "lex:"
+  print lex 
+  let parse = run "parser" (pClass <* eof) lex
+  print "parse:"
+  print parse
+  putStrLn $ tShow parse
+  processFile "myTest.cs"
+
+runTest :: (ErrorsPretty s, Ord s, Show a) => String -> Parser s a -> [s] -> a
+runTest s p = fst . head . parse p
+
 main :: IO ()
 main = do
   -- get command line arguments

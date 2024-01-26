@@ -1,0 +1,16 @@
+	Bsr main
+	HALT
+main:
+	LDC 5
+	LDS 0
+	LDLA 0
+	STA 0
+	AJS -1
+	LDLA 0
+	LDC 1
+	ADD
+	LDS 0
+	LDL 1
+	STA 0
+	AJS -1
+	RET

@@ -224,12 +224,13 @@ pClass :: Parser Token Class
 pClass = Class <$ keyword KeyClass <*> sUpperId <*> braced (many pMember)
 
 pMember :: Parser Token Member
-pMember =  MemberD <$> pDeclSemi
-       <|> MemberM <$> pRetType <*> sLowerId <*> methArgList <*> pBlock
+pMember =  MemberD <$> pDeclSemi                                          -- class variable
+       <|> MemberM <$> pRetType <*> sLowerId <*> methArgList <*> pBlock   -- class method
     where
-  methArgList = parenthesised (option (listOf pDecl (punctuation Comma)) [])
+  methArgList :: Parser Token [Decl]
+  methArgList = parenthesised (option (listOf pDecl (punctuation Comma)) []) -- list of declarations
 
-pBlock :: Parser Token Stat
+pBlock :: Parser Token Stat   -- code block
 pBlock = StatBlock <$> braced (many pStatDecl)
 
 pStatDecl :: Parser Token Stat
@@ -282,10 +283,10 @@ pExprSimple =  ExprLit  <$> pLiteral
            <|> ExprVar  <$> sLowerId
            <|> parenthesised pExpr
 
-pDecl :: Parser Token Decl
+pDecl :: Parser Token Decl -- declaration of (type | void) then lowercase name
 pDecl = Decl <$> pRetType <*> sLowerId
 
-pDeclSemi :: Parser Token Decl
+pDeclSemi :: Parser Token Decl -- declaration then simicolon
 pDeclSemi = pDecl <* sSemi
 
 pType :: Parser Token Type
